@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mamá Tita - Factura</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #fff0f5, #ffe4e1);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 30px;
+    }
+    .factura {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #ff6f61;
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #555;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      margin-top: 5px;
+      font-size: 16px;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .row > * {
+      flex: 1;
+    }
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      margin-top: 15px;
+      font-size: 16px;
+      cursor: pointer;
+      color: white;
+      background-color: #ff6f61;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #e0554d;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 10px;
+    }
+    .total {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="factura">
+    <h1>🍓 Mamá Tita Snacks</h1>
+    <p style="text-align:center;"><strong>Fecha:</strong> <span id="fecha"></span></p>
+
+    <label>Nombre del cliente</label>
+    <input type="text" id="cliente" placeholder="Ej: Ana Pérez" />
+
+    <div class="row">
+      <div>
+        <label>Producto</label>
+        <select id="producto">
+          <option value="Fresas con crema">Fresas con crema - RD$150</option>
+          <option value="Mini donuts">Mini donuts - RD$100</option>
+          <option value="Postre del día">Postre del día - RD$120</option>
+          <option value="Jugo natural">Jugo natural - RD$80</option>
+        </select>
+      </div>
+      <div>
+        <label>Cantidad</label>
+        <input type="number" id="cantidad" value="1" min="1" />
+      </div>
+    </div>
+
+    <button onclick="agregarProducto()">➕ Agregar a la factura</button>
+
+    <h3>🧾 Productos agregados:</h3>
+    <ul id="lista-productos"></ul>
+
+    <div class="total">Total: RD$<span id="total">0</span></div>
+
+    <div class="row">
+      <button onclick="guardarDatos()">💾 Guardar factura</button>
+      <button onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+  </div>
+
+  <script>
+    const precios = {
+      "Fresas con crema": 150,
+      "Mini donuts": 100,
+      "Postre del día": 120,
+      "Jugo natural": 80
+    };
+
+    let carrito = [];
+
+    document.getElementById("fecha").innerText = new Date().toLocaleDateString();
+
+    function agregarProducto() {
+      const producto = document.getElementById("producto").value;
+      const cantidad = parseInt(document.getElementById("cantidad").value);
+      if (!cantidad || cantidad < 1) return;
+
+      carrito.push({ producto, cantidad });
+      renderCarrito();
+    }
+
+    function renderCarrito() {
+      const lista = document.getElementById("lista-productos");
+      lista.innerHTML = "";
+
+      let total = 0;
+      carrito.forEach(item => {
+        const subtotal = precios[item.producto] * item.cantidad;
+        total += subtotal;
+
+        const li = document.createElement("li");
+        li.textContent = `${item.producto} x${item.cantidad} → RD$${subtotal}`;
+        lista.appendChild(li);
+      });
+
+      document.getElementById("total").textContent = total;
+    }
+
+    function guardarDatos() {
+      const cliente = document.getElementById("cliente").value;
+      const fecha = document.getElementById("fecha").innerText;
+      const total = document.getElementById("total").textContent;
+
+      if (!cliente || carrito.length === 0) {
+        alert("Agrega productos y el nombre del cliente.");
+        return;
+      }
+
+      const productosTexto = carrito.map(p => `${p.producto} x${p.cantidad}`).join(", ");
+
+      fetch('https://script.google.com/macros/s/AKfycbze6vYAcNPqIhJ3T16xEziRv1IacRXZv8jpsoOE_wkwl4TkpVBHRLgGaYigRwWQIOf6/exec', {
+        method: 'POST',
+        body: JSON.stringify({
+          cliente,
+          fecha,
+          productos: productosTexto,
+          total
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.text())
+      .then(data => {
+        alert("✅ Factura guardada correctamente.");
+        carrito = [];
+        renderCarrito();
+        document.getElementById("cliente").value = "";
+      })
+      .catch(err => {
+        alert("❌ Error al guardar: " + err);
+      });
+    }
+  </script>
+</body>
+</html>
